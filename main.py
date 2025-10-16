@@ -1,0 +1,64 @@
+import argparse
+import openpyxl
+from datetime import date, timedelta
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Agrega texto a las ultimas filas de las columna",
+        formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument(
+        "texto",
+        nargs="*",
+        help="""
+        Uso 'main texto texto texto'(texto= texto a agregar al final de cada columna) 
+
+        Usa 'datet' para insertar la fecha actual (YYYY-MM-DD).
+        Usa 'datey' para insertar la fecha de ayer (YYYY-MM-DD).
+        Ejemplo: 'main hoy es datet'""",
+    )
+
+    args = parser.parse_args()
+
+    if not args.texto:
+        parser.print_help()
+        sys.exit(1)
+
+    texto = []
+    for t in args.texto:
+        if t.lower() == "datet":
+            texto.append(str(date.today()))
+        elif t.lower() =="datey":
+            texto.append(str(date.today() - timedelta(days=1)))
+        else:
+            texto.append(t)
+
+    archivo = "main.xlsx"
+    workbook = openpyxl.load_workbook(archivo)
+    sheet = workbook.active
+
+    columnas = ["A", "B", "C"]
+
+    for i, texto in enumerate(texto):
+        if i >= len(columnas):
+            continue
+
+        col = columnas[i]
+        last_row = 0
+
+        for cell in sheet[col]:
+            if cell.value is not None:
+                last_row = cell.row
+
+        next_row = last_row + 1 if last_row > 0 else 1
+        sheet[f"{col}{next_row}"] = texto
+        print(f"Agregado '{texto}' en {col}{next_row}")
+
+    workbook.save(archivo)
+    print(f"\nCambios guardados en {archivo}")
+
+
+if __name__ == "__main__":
+    main()
